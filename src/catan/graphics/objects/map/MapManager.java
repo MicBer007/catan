@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import debug.Debug;
+import settings.Settings;
 
 public class MapManager {
 	
@@ -42,14 +42,14 @@ public class MapManager {
 		populations.add(new PopulatedTileGroup("b6", new String[] {"inner", "middle", "outer"}, new GameTileType[] {GameTileType.WHEAT, GameTileType.WOOD, GameTileType.DESERT}, new PortType[] {null, null, null}, new Integer[] {9, 11, 7}));
 	}
 	
-	public GameMap generateMap(List<RigidTileGroup> regions, List<PopulatedTileGroup> populations, int xOffset, int yOffset) {
+	public GameMap generateMap(List<RigidTileGroup> regions, List<PopulatedTileGroup> populations) {
 		List<Port> ports = new ArrayList<Port>();
 		List<GameTile> tiles = new ArrayList<GameTile>();
 		for(int i = 0; i < regions.size(); i++) {
 			RigidTileGroup region = regions.get(i);
 			PopulatedTileGroup population = populations.get(i);
 			for(int j = 0; j < region.getSize(); j++) {
-				GameTile tile = new GameTile(region.getXPositions().get(j) + xOffset, region.getYPositions().get(j) + yOffset, population.getCorrespondingTileType(region.getTileTags().get(j)), population.getCorrespondingDiceNumber(region.getTileTags().get(j)));
+				GameTile tile = new GameTile(region.getXPositions().get(j), region.getYPositions().get(j), population.getCorrespondingTileType(region.getTileTags().get(j)), population.getCorrespondingDiceNumber(region.getTileTags().get(j)));
 				tiles.add(tile);
 				if(region.getPortPositions().get(j) != -1) {
 					ports.add(getPort(population.getCorrespondingPortType(region.getTileTags().get(j)), region.getPortPositions().get(j), tile.getRealX(), tile.getRealY()));
@@ -132,28 +132,28 @@ public class MapManager {
 		int portY;
 		switch(portLocation) {
 			case 1:
-				portX = Debug.GAME_TILE_SIZE_X / 2;
-				portY = -Debug.GAME_TILE_SIZE_Y / 5 + 2;
+				portX = Settings.GAME_TILE_SIZE_X / 2;
+				portY = -Settings.GAME_TILE_SIZE_Y / 5 + 2;
 				break;
 			case 2:
-				portX = Debug.GAME_TILE_SIZE_X;
-				portY = Debug.GAME_TILE_SIZE_Y / 6 - 4;
+				portX = Settings.GAME_TILE_SIZE_X;
+				portY = Settings.GAME_TILE_SIZE_Y / 6 - 4;
 				break;
 			case 3:
-				portX = Debug.GAME_TILE_SIZE_X + 2;
-				portY = Debug.GAME_TILE_SIZE_Y / 6 * 5 + 3;
+				portX = Settings.GAME_TILE_SIZE_X + 2;
+				portY = Settings.GAME_TILE_SIZE_Y / 6 * 5 + 3;
 				break;
 			case 4:
-				portX = Debug.GAME_TILE_SIZE_X / 2;
-				portY = Debug.GAME_TILE_SIZE_Y / 5 * 6 - 2;
+				portX = Settings.GAME_TILE_SIZE_X / 2;
+				portY = Settings.GAME_TILE_SIZE_Y / 5 * 6 - 2;
 				break;
 			case 5:
-				portX = -Debug.GAME_TILE_SIZE_X / 6 + 14;
-				portY = Debug.GAME_TILE_SIZE_Y / 6 * 5 + 4;
+				portX = -Settings.GAME_TILE_SIZE_X / 6 + 14;
+				portY = Settings.GAME_TILE_SIZE_Y / 6 * 5 + 4;
 				break;
 			case 6:
-				portX = -Debug.GAME_TILE_SIZE_X / 6 + 14;
-				portY = Debug.GAME_TILE_SIZE_Y / 6 - 2;
+				portX = -Settings.GAME_TILE_SIZE_X / 6 + 14;
+				portY = Settings.GAME_TILE_SIZE_Y / 6 - 2;
 				break;
 			default:
 				return null;
@@ -191,6 +191,15 @@ public class MapManager {
 		}
 		return edgesToReturn;
 	}
+	
+	public List<PopulatedTileGroup> getPopulationForGeneratorSettings(String generatorSettings) {
+		List<PopulatedTileGroup> populations = new ArrayList<PopulatedTileGroup>();
+		String[] populationIDs = generatorSettings.split("-");
+		for(int i = 0; i < 6; i++) {
+			populations.add(getPopulation(populationIDs[i]));
+		}
+		return populations;
+	}
 
 	public List<RigidTileGroup> getRegions() {
 		return regions;
@@ -202,7 +211,7 @@ public class MapManager {
 	
 	public PopulatedTileGroup getPopulation(String populationID) {
 		for(PopulatedTileGroup population: populations) {
-			if(population.getName() == populationID) {
+			if(population.getName().equalsIgnoreCase(populationID)) {
 				return population;
 			}
 		}

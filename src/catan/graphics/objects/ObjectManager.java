@@ -10,15 +10,11 @@ import catan.graphics.objects.map.GameTile;
 import catan.graphics.objects.map.MapEdge;
 import catan.graphics.objects.map.MapIntersection;
 import catan.graphics.objects.map.MapManager;
-import catan.graphics.objects.map.PopulatedTileGroup;
 import catan.graphics.objects.map.Port;
 import catan.graphics.rendering.MasterRenderer;
-import debug.Log;
-import debug.LogLevel;
+import settings.Settings;
 
 public class ObjectManager {
-	
-	private Log log = new Log(this.getClass().getSimpleName(), LogLevel.ERROR);
 	
 	private MapManager mapManager;
 	
@@ -26,16 +22,7 @@ public class ObjectManager {
 	
 	public ObjectManager() {
 		mapManager = new MapManager();
-		List<PopulatedTileGroup> mapPopulations = new ArrayList<PopulatedTileGroup>();
-		mapPopulations.add(mapManager.getPopulation("a1"));
-		mapPopulations.add(mapManager.getPopulation("a2"));
-		mapPopulations.add(mapManager.getPopulation("a3"));
-		mapPopulations.add(mapManager.getPopulation("a4"));
-		mapPopulations.add(mapManager.getPopulation("a5"));
-		mapPopulations.add(mapManager.getPopulation("a6"));
-		map = mapManager.generateMap(mapManager.getRegions(), mapPopulations, 1, 2);
-		log.info("The map has " + map.getIntersections().size() + " intersections.", 10);
-		log.info("The map has " + map.getEdges().size() + " roads.", 10);
+		map = mapManager.generateMap(mapManager.getRegions(), mapManager.getPopulationForGeneratorSettings(Settings.GENERATOR_SETTINGS));
 	}
 	
 	public void render(Graphics g, MasterRenderer renderer) {
@@ -83,13 +70,6 @@ public class ObjectManager {
 			}
 		}
 		return null;
-	}
-	
-	public void putRobberOnTile(GameTile tile) {
-		for(GameTile gameTile: map.getTiles()) {
-			gameTile.setRobber(false);
-		}
-		tile.setRobber(true);
 	}
 	
 	public List<MapIntersection> getIntersectionsForRoll(int number) {

@@ -7,20 +7,15 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-import catan.CatanGame;
 import catan.graphics.objects.ObjectManager;
-import catan.graphics.objects.map.GameTile;
-import catan.graphics.objects.map.GameTileType;
-import catan.graphics.objects.map.MapEdge;
-import catan.graphics.objects.map.MapIntersection;
-import catan.graphics.objects.map.SettlementType;
 import catan.graphics.objects.ui.Button;
 import catan.graphics.objects.ui.Hitbox;
 import catan.graphics.objects.ui.OptionBox;
 import catan.graphics.objects.ui.Panel;
 import catan.graphics.objects.ui.TextComponent;
 import catan.graphics.rendering.PlayerRenderer;
-import debug.Debug;
+import settings.Settings;
+import utils.HitboxUtils;
 
 public class PlayerManager {
 	
@@ -28,11 +23,8 @@ public class PlayerManager {
 	
 	private ObjectManager objectManager;
 	
-	private List<Integer> actionTakers = new ArrayList<Integer>();
-	private List<PlayerAction> actions = new ArrayList<PlayerAction>();
-
-	private int actionTaker;
-	private PlayerAction action;
+	private PlayerActionManager playerActionManager;
+	private PlayerCardManager playerCardManager;
 	
 	private boolean playing;
 	private int whoseTurn = 0;
@@ -44,50 +36,20 @@ public class PlayerManager {
 	
 	private PlayerRenderer pRenderer;
 	
-	private Random random;
-	
-	public PlayerManager(CatanGame game, ObjectManager objectManager) {
-		players.add(new Player(Team.RED, "red player"));
-		players.add(new Player(Team.BLUE, "blue player"));
+	public PlayerManager(ObjectManager objectManager) {
 		this.objectManager = objectManager;
-		pRenderer = new PlayerRenderer(new Hitbox(10, 10, 50, 50), Debug.SCREEN_WIDTH / 2 + 50, 50);
+		players.add(new Player(Team.RED, "red player"));
+		pRenderer = new PlayerRenderer(new Hitbox(10, 10, 50, 50));
+		playerCardManager = new PlayerCardManager(this);
 		playing = false;
-		action = PlayerAction.NONE;
-		random = new Random();
-		startGame();
+		playerActionManager = new PlayerActionManager(this, objectManager, players);
+		initializeUI();
 	}
 	
 	public void startGame() {
-		for(int i = 0; i < players.size(); i++) {
-			addItemToQueue(i, PlayerAction.PLACE_TOWN_START);
-		}
-//		for(int i = players.size() - 1; i >= 0; i--) {
-//			addItemToQueue(i, PlayerAction.PLACE_TOWN_START_WITH_RESOURCES);
-//		}
-		for(int i = 0; i < players.size(); i++) {
-			addItemToQueue(i, PlayerAction.PLACE_ROAD_START);
-		}
-//		for(int i = players.size() - 1; i >= 0; i--) {
-//			addItemToQueue(i, PlayerAction.PLACE_ROAD_START);
-//		}
-	}
-	
-	public void emptyQueue() {
 		if(!playing) {
 			setActivePlayer(0);
-			Runnable nextTurnButton = new Runnable() {@Override public void run(){nextPlayer();}};
-			Runnable buyRoad = new Runnable() {@Override public void run(){playerBuyRoad();}};
-			Runnable buyVillage = new Runnable() {@Override public void run(){playerBuyVillage();}};
-			Runnable buyCity = new Runnable() {@Override public void run(){playerBuyCity();}};
-			Runnable popUpPlayerTradePanel = new Runnable() {@Override public void run(){popUpPlayerTradePanel();}};
-			panel = new Panel(new Hitbox(Debug.SCREEN_WIDTH / 2, 0, Debug.SCREEN_WIDTH / 2, Debug.SCREEN_HEIGHT), new Color(153, 74, 15));
-			panel.addComponent(new Button(new Hitbox(Debug.SCREEN_WIDTH - 140, 20, 90, 40), "finish turn", new Color(122, 40, 0), new Color(201, 85, 17), new Color(185, 51, 18), nextTurnButton));
-			panel.addComponent(new Button(new Hitbox(Debug.SCREEN_WIDTH / 2 + 40, Debug.SCREEN_HEIGHT - 100, 90, 40), "buy road", new Color(142, 57, 10), new Color(201, 85, 17), new Color(185, 51, 18), buyRoad));
-			panel.addComponent(new Button(new Hitbox(Debug.SCREEN_WIDTH / 2 + 190, Debug.SCREEN_HEIGHT - 100, 90, 40), "buy village", new Color(142, 57, 10), new Color(201, 85, 17), new Color(185, 51, 18), buyVillage));
-			panel.addComponent(new Button(new Hitbox(Debug.SCREEN_WIDTH / 2 + 340, Debug.SCREEN_HEIGHT - 100, 90, 40), "buy city", new Color(142, 57, 10), new Color(201, 85, 17), new Color(185, 51, 18), buyCity));
-			panel.addComponent(new Button(new Hitbox(Debug.SCREEN_WIDTH / 2 + 490, Debug.SCREEN_HEIGHT - 100, 90, 40), "trade", new Color(142, 57, 10), new Color(201, 85, 17), new Color(185, 51, 18), popUpPlayerTradePanel));
-			
-			initializeTradingPanel();
+			panel.setVisible(true);
 			playing = true;
 		}
 	}
@@ -101,39 +63,31 @@ public class PlayerManager {
 	}
 	
 	public void nextPlayer() {
-		if(action == PlayerAction.NONE) {
+		if(playerActionManager.getAction() == PlayerAction.NONE) {
 			setActivePlayer(whoseTurn + 1);
-			simulateNumberRoll(getRandomDiceNumber());
+			playerCardManager.simulateNumberRoll();
 		}
 	}
 	
 	public void playerBuyRoad() {
-		if(playerHasResource(activePlayer, ResourceType.WOOD, 1) && playerHasResource(activePlayer, ResourceType.BRICK, 1)) {
-			removeResourceFromPlayer(activePlayer, ResourceType.WOOD, 1);
-			removeResourceFromPlayer(activePlayer, ResourceType.BRICK, 1);
-			addItemToQueue(whoseTurn, PlayerAction.PLACE_ROAD);
+		if(playerCardManager.removePlayerResources(activePlayer, Settings.getRoadCost())) {
+			playerActionManager.addItemToQueue(whoseTurn, PlayerAction.PLACE_ROAD);
 		}
 	}
 	
 	public void playerBuyVillage() {
-		if(playerHasResource(activePlayer, ResourceType.WOOD, 1) && playerHasResource(activePlayer, ResourceType.BRICK, 1) && playerHasResource(activePlayer, ResourceType.WHEAT, 1) && playerHasResource(activePlayer, ResourceType.PASTURE, 1)) {
-			removeResourceFromPlayer(activePlayer, ResourceType.WOOD, 1);
-			removeResourceFromPlayer(activePlayer, ResourceType.BRICK, 1);
-			removeResourceFromPlayer(activePlayer, ResourceType.WHEAT, 1);
-			removeResourceFromPlayer(activePlayer, ResourceType.PASTURE, 1);
-			addItemToQueue(whoseTurn, PlayerAction.PLACE_TOWN);
+		if(playerCardManager.removePlayerResources(activePlayer, Settings.getVillageCost())) {
+			playerActionManager.addItemToQueue(whoseTurn, PlayerAction.PLACE_TOWN);
 		}
 	}
 	
 	public void playerBuyCity() {
-		if(playerHasResource(activePlayer, ResourceType.WHEAT, 2) && playerHasResource(activePlayer, ResourceType.STONE, 3)) {
-			removeResourceFromPlayer(activePlayer, ResourceType.WHEAT, 2);
-			removeResourceFromPlayer(activePlayer, ResourceType.STONE, 3);
-			addItemToQueue(whoseTurn, PlayerAction.UPGRADE_CITY);
+		if(playerCardManager.removePlayerResources(activePlayer, Settings.getCityCost())) {
+			playerActionManager.addItemToQueue(whoseTurn, PlayerAction.UPGRADE_CITY);
 		}
 	}
 	
-	public void playerClickConfirmForTrade() {
+	public void playerTradeWithBank() {
 		OptionBox tradeIn = (OptionBox) (tradingPanel.getSubComponents().get(2));
 		OptionBox tradeOut = (OptionBox) (tradingPanel.getSubComponents().get(3));
 		ResourceType in = ResourceType.getResourceTypeBasedOnName(tradeIn.getCurrentOption().getTextComponent().getText());
@@ -141,178 +95,19 @@ public class PlayerManager {
 		playerTradeResources(activePlayer, in, out);
 	}
 	
-	public void popUpPlayerTradePanel() {
-		tradingPanel.setVisible(!tradingPanel.isVisible());
-	}
-	
 	public void playerTradeResources(Player player, ResourceType itemToBeGiven, ResourceType itemToBeGot) {
-		int amountNeeded = player.getTradingInfluence(itemToBeGiven);
-		if(playerHasResource(player, itemToBeGiven, amountNeeded)) {
-			removeResourceFromPlayer(player, itemToBeGiven, amountNeeded);
+		if(player.removeResources(itemToBeGiven, player.getTradingInfluence(itemToBeGiven))) {
 			player.addResource(itemToBeGot);
 		}
 	}
 	
-	private boolean playerHasResource(Player player, ResourceType resource, int amount) {
-		if(!player.getResources().containsKey(resource)) {
-			return false;
-		}
-		return player.getResources().get(resource) >= amount;
-	}
-	
-	private void removeResourceFromPlayer(Player player, ResourceType type, int amount) {
-		if(player.getResources().containsKey(type)) {
-			int current = player.getResources().get(type);
-			if(current >= amount) {
-				player.getResources().replace(type, current - amount);
-			}
-		}
-	}
-	
-	public int getRandomDiceNumber() {
-		return random.nextInt(6) + random.nextInt(6) + 2;
-	}
-	
-	public void addItemToQueue(int actionTaker, PlayerAction action) {
-		if(this.action == PlayerAction.NONE) {
-			this.actionTaker = actionTaker;
-			this.action = action;
-			setActivePlayer(actionTaker);
-			return;
-		}
-		actionTakers.add(actionTaker);
-		actions.add(action);
-	}
-	
-	public void actionCompleted() {
-		if(actions.size() > 0) {
-			actionTaker = actionTakers.remove(0);
-			action = actions.remove(0);
-			setActivePlayer(actionTaker);
-			return;
-		}
-		action = PlayerAction.NONE;
-		emptyQueue();
-	}
-	
 	public void mouseReleasedEvent(MouseEvent e) {
 		if(playing) {
-			if(panel.getHitbox().isPointInHitbox(e.getX(), e.getY())) {
-				panel.mouseReleased(e);
-				tradingPanel.mouseReleased(e);
-				return;
-			}
+			panel.mouseReleased(e);
+			tradingPanel.mouseReleased(e);
 		}
-		if(action == PlayerAction.PLACE_TOWN) {
-			MapIntersection intersection = objectManager.getIntersectionOnPosition(e.getX(), e.getY());
-			if(intersection != null && intersection.getSettlementType() == SettlementType.EMPTY) {
-				for(MapIntersection adjacent: intersection.getAdjacentIntersections()) {
-					if(adjacent.getSettlementType() != SettlementType.EMPTY) {
-						return;
-					}
-				}
-				for(MapEdge edge: intersection.getAdjacentEdges()) {
-					if(edge.getTeam() == players.get(actionTaker).getTeam()) {
-						intersection.setType(SettlementType.VILLAGE, players.get(actionTaker).getTeam());
-						if(intersection.getPortType() != null) {
-							players.get(actionTaker).addPort(intersection.getPortType());
-						}
-						actionCompleted();
-					}
-				}
-			}
-			return;
-		}
-		if(action == PlayerAction.PLACE_TOWN_START) {
-			MapIntersection intersection = objectManager.getIntersectionOnPosition(e.getX(), e.getY());
-			if(intersection != null && intersection.getSettlementType() == SettlementType.EMPTY) {
-				for(MapIntersection adjacent: intersection.getAdjacentIntersections()) {
-					if(adjacent.getSettlementType() != SettlementType.EMPTY) {
-						return;
-					}
-				}
-				intersection.setType(SettlementType.VILLAGE, players.get(actionTaker).getTeam());
-				if(intersection.getPortType() != null) {
-					players.get(actionTaker).addPort(intersection.getPortType());
-				}
-				actionCompleted();
-			}
-			return;
-		}
-		if(action == PlayerAction.PLACE_TOWN_START_WITH_RESOURCES) {
-			MapIntersection intersection = objectManager.getIntersectionOnPosition(e.getX(), e.getY());
-			if(intersection != null && intersection.getSettlementType() == SettlementType.EMPTY) {
-				for(MapIntersection adjacent: intersection.getAdjacentIntersections()) {
-					if(adjacent.getSettlementType() != SettlementType.EMPTY) {
-						return;
-					}
-				}
-				intersection.setType(SettlementType.VILLAGE, players.get(actionTaker).getTeam());
-				if(intersection.getPortType() != null) {
-					players.get(actionTaker).addPort(intersection.getPortType());
-				}
-				for(GameTile tile: intersection.getAdjacentTiles()) {
-					if(tile.getTileType() != GameTileType.DESERT) {
-						activePlayer.addResource(tile.getTileType().getCorrespondingResource());
-					}
-				}
-				actionCompleted();
-			}
-			return;
-		}
-		if(action == PlayerAction.PLACE_ROAD) {
-			MapEdge edge = objectManager.getEdgeOnPosition(e.getX(), e.getY());
-			if(edge != null && !edge.isRoad()) {
-				for(MapEdge adjacentEdge: edge.getAdjacentEdges()) {
-					if(adjacentEdge.isRoad() && adjacentEdge.getTeam() == players.get(actionTaker).getTeam()) {
-						edge.setTeam(players.get(actionTaker).getTeam());
-						actionCompleted();
-						return;
-					}
-				}
-			}
-			return;
-		}
-		if(action == PlayerAction.PLACE_ROAD_START) {
-			MapEdge edge = objectManager.getEdgeOnPosition(e.getX(), e.getY());
-			if(edge != null && !edge.isRoad()) {
-				for(MapIntersection intersection: edge.getAdjacentIntersections()) {
-					if(intersection.getSettlementType() == SettlementType.VILLAGE && intersection.getTeam() == players.get(actionTaker).getTeam()) {
-						for(MapEdge adjacentEdge: intersection.getAdjacentEdges()) {
-							if(adjacentEdge.isRoad()) {
-								return;
-							}
-						}
-						edge.setTeam(players.get(actionTaker).getTeam());
-						actionCompleted();
-					}
-				}
-			}
-			return;
-		}
-		if(action == PlayerAction.UPGRADE_CITY) {
-			MapIntersection intersection = objectManager.getIntersectionOnPosition(e.getX(), e.getY());
-			if(intersection != null && intersection.getSettlementType() == SettlementType.VILLAGE && intersection.getTeam() == players.get(actionTaker).getTeam()) {
-				intersection.setType(SettlementType.CITY, players.get(actionTaker).getTeam());
-				actionCompleted();
-			}
-			return;
-		}
-		if(action == PlayerAction.MOVE_ROBBER) {
-			GameTile tile = objectManager.getTileOnPosition(e.getX(), e.getY());
-			if(tile != null && !tile.isRobber()) {
-				objectManager.putRobberOnTile(tile);
-				action = PlayerAction.CHOOSE_PLAYER_TO_STEAL_FROM;
-			}
-			return;
-		}
-		if(action == PlayerAction.CHOOSE_PLAYER_TO_STEAL_FROM) {
-			MapIntersection intersection = objectManager.getIntersectionOnPosition(e.getX(), e.getY());
-			if(intersection.getTeam() != activePlayer.getTeam() && intersection.getTeam() != Team.NONE) {
-				
-			}
-			return;
-		}
+		playerActionManager.mouseReleasedEvent(e);
+		playerCardManager.mouseReleasedEvent(e);
 	}
 	
 	public void mousePressedEvent(MouseEvent e) {
@@ -320,6 +115,7 @@ public class PlayerManager {
 			tradingPanel.mousePressed(e);
 			panel.mousePressed(e);
 		}
+		playerCardManager.mousePressedEvent(e);
 	}
 	
 	public void mouseMoveEvent(MouseEvent e) {
@@ -327,26 +123,7 @@ public class PlayerManager {
 			panel.mouseMoved(e);
 			tradingPanel.mouseMoved(e);
 		}
-	}
-	
-	public void simulateNumberRoll(int number) {
-		if(number == 7) {
-			addItemToQueue(whoseTurn, PlayerAction.MOVE_ROBBER);
-			return;
-		}
-		for(GameTile tile: objectManager.getMap().getTiles()) {
-			if(tile.getDiceNumber() == number && !tile.isRobber()) {
-				for(MapIntersection intersection: tile.getAdjacentIntersections()) {
-					if(intersection.getSettlementType() != SettlementType.EMPTY) {
-						Player player = getPlayerOfTeam(intersection.getTeam());
-						ResourceType resource = tile.getTileType().getCorrespondingResource();
-						if(resource != null) {
-							player.addResources(resource, intersection.getSettlementType().getNumberOfResourcesToCollect());
-						}
-					}
-				}
-			}
-		}
+		playerCardManager.mouseMovedEvent(e);
 	}
 	
 	public void addPlayer(Player player) {
@@ -375,14 +152,6 @@ public class PlayerManager {
 		return null;
 	}
 
-	public int getActionTaker() {
-		return actionTaker;
-	}
-
-	public PlayerAction getAction() {
-		return action;
-	}
-
 	public boolean isPlaying() {
 		return playing;
 	}
@@ -398,41 +167,67 @@ public class PlayerManager {
 	public void render(Graphics g) {
 		if(playing) {
 			panel.render(g);
-			pRenderer.renderPlayerResources(g, activePlayer.getResources());
+			playerCardManager.renderPlayerCards(g, activePlayer);
 			tradingPanel.render(g);
 		}
 		pRenderer.renderCurrentPlayer(g, activePlayer);
 	}
 	
-	private void initializeTradingPanel() {
-		TextComponent tradeText1 = new TextComponent(new Hitbox(Debug.SCREEN_WIDTH / 2 - 210, Debug.SCREEN_HEIGHT / 2 - 40, 100, 40), "I want to sell", Color.BLACK, new Color(130, 63, 10));
-		TextComponent tradeText2 = new TextComponent(new Hitbox(Debug.SCREEN_WIDTH / 2 - 48, Debug.SCREEN_HEIGHT / 2 - 40, 30, 40), "for", Color.BLACK, new Color(130, 63, 10));
+	private void initializeUI() {
+		panel = new Panel(new Hitbox(Settings.SCREEN_WIDTH / 2, 0, Settings.SCREEN_WIDTH / 2, Settings.SCREEN_HEIGHT), new Color(150, 70, 13));
+		List<Hitbox> hitboxes = HitboxUtils.generateHitboxes(Settings.SCREEN_WIDTH / 2 + Settings.UI_PADDING, Settings.SCREEN_HEIGHT - Settings.UI_PADDING - 80, 5, Settings.SCREEN_WIDTH - Settings.UI_PADDING + 5, Settings.SCREEN_HEIGHT - Settings.UI_PADDING - 80, 90, 40);
+		panel.addComponent(new Button(hitboxes.get(0), "finish turn", new Color(142, 57, 10), new Runnable() {@Override public void run(){nextPlayer();}}));
+		panel.addComponent(new Button(hitboxes.get(1), "buy road", new Color(142, 57, 10), new Runnable() {@Override public void run(){playerBuyRoad();}}));
+		panel.addComponent(new Button(hitboxes.get(2), "buy village", new Color(142, 57, 10), new Runnable() {@Override public void run(){playerBuyVillage();}}));
+		panel.addComponent(new Button(hitboxes.get(3), "buy city", new Color(142, 57, 10), new Runnable() {@Override public void run(){playerBuyCity();}}));
+		panel.addComponent(new Button(hitboxes.get(4), "trade", new Color(142, 57, 10), new Runnable() {@Override public void run(){tradingPanel.toggleVisibility();}}));
+		panel.setVisible(false);
 		
-		OptionBox tradeBox = new OptionBox(new Hitbox(Debug.SCREEN_WIDTH / 2 - 120, Debug.SCREEN_HEIGHT / 2 - 35, 70, 30), Color.BLACK, Color.BLACK, Color.BLACK, Color.WHITE);
-		tradeBox.addOption("Brick", new Color(184, 66, 19), new Color(156, 56, 16), new Color(207, 74, 21));
-		tradeBox.addOption("Wood", new Color(21, 121, 26), new Color(16, 95, 20), new Color(30, 173, 37));
-		tradeBox.addOption("Pasture", new Color(76, 230, 65), new Color(48, 171, 37), new Color(86, 215, 75));
-		tradeBox.addOption("Wheat", new Color(245, 219, 24), new Color(237, 178, 2), new Color(235, 222, 40));
-		tradeBox.addOption("Stone", new Color(113, 113, 116), new Color(96, 96, 102), new Color(153, 153, 153));
+		OptionBox tradeBox = new OptionBox(new Hitbox(Settings.SCREEN_WIDTH / 2 - 120, Settings.SCREEN_HEIGHT / 2 - 35, 70, 30), Color.WHITE);
+		tradeBox.addOption("Brick", new Color(184, 66, 19));
+		tradeBox.addOption("Wood", new Color(21, 121, 26));
+		tradeBox.addOption("Pasture", new Color(76, 230, 65));
+		tradeBox.addOption("Wheat", new Color(245, 219, 24));
+		tradeBox.addOption("Stone", new Color(113, 113, 116));
 
-		OptionBox tradeBox2 = new OptionBox(new Hitbox(Debug.SCREEN_WIDTH / 2 - 15, Debug.SCREEN_HEIGHT / 2 - 35, 70, 30), Color.BLACK, Color.BLACK, Color.BLACK, Color.WHITE);
-		tradeBox2.addOption("Brick", new Color(184, 66, 19), new Color(156, 56, 16), new Color(207, 74, 21));
-		tradeBox2.addOption("Wood", new Color(21, 121, 26), new Color(16, 95, 20), new Color(30, 173, 37));
-		tradeBox2.addOption("Pasture", new Color(76, 230, 65), new Color(48, 171, 37), new Color(86, 215, 75));
-		tradeBox2.addOption("Wheat", new Color(245, 219, 24), new Color(237, 178, 2), new Color(235, 222, 40));
-		tradeBox2.addOption("Stone", new Color(113, 113, 116), new Color(96, 96, 102), new Color(153, 153, 153));
+		OptionBox tradeBox2 = new OptionBox(new Hitbox(Settings.SCREEN_WIDTH / 2 - 15, Settings.SCREEN_HEIGHT / 2 - 35, 70, 30), Color.WHITE);
+		tradeBox2.addOption("Brick", new Color(184, 66, 19));
+		tradeBox2.addOption("Wood", new Color(21, 121, 26));
+		tradeBox2.addOption("Pasture", new Color(76, 230, 65));
+		tradeBox2.addOption("Wheat", new Color(245, 219, 24));
+		tradeBox2.addOption("Stone", new Color(113, 113, 116));
 		
-		Runnable run = new Runnable() {@Override public void run() {playerClickConfirmForTrade();}};
-		Button confirm = new Button(new Hitbox(Debug.SCREEN_WIDTH / 2 + 80, Debug.SCREEN_HEIGHT / 2 - 40, 100, 40), "Confirm", new Color(89, 197, 26), new Color(86, 167, 15), new Color(73, 228, 26), run);
+		Button confirm = new Button(new Hitbox(Settings.SCREEN_WIDTH / 2 + 80, Settings.SCREEN_HEIGHT / 2 - 40, 100, 40), "Confirm", new Color(89, 197, 26), new Runnable() {@Override public void run() {playerTradeWithBank();}});
 		
-		tradingPanel = new Panel(new Hitbox(Debug.SCREEN_WIDTH / 2 - 210, Debug.SCREEN_HEIGHT / 2 - 70, 420, 100), new Color(130, 63, 10));
-		tradingPanel.addComponent(tradeText1);
-		tradingPanel.addComponent(tradeText2);
+		tradingPanel = new Panel(new Hitbox(Settings.SCREEN_WIDTH / 2 - 210, Settings.SCREEN_HEIGHT / 2 - 70, 420, 100), new Color(130, 63, 10));
+		tradingPanel.addComponent(new TextComponent(new Hitbox(Settings.SCREEN_WIDTH / 2 - 210, Settings.SCREEN_HEIGHT / 2 - 40, 100, 40), "I want to sell", Color.BLACK, new Color(130, 63, 10)));
+		tradingPanel.addComponent(new TextComponent(new Hitbox(Settings.SCREEN_WIDTH / 2 - 48, Settings.SCREEN_HEIGHT / 2 - 40, 30, 40), "for", Color.BLACK, new Color(130, 63, 10)));
 		tradingPanel.addComponent(tradeBox);
 		tradingPanel.addComponent(tradeBox2);
 		tradingPanel.addComponent(confirm);
 		tradingPanel.setVisible(false);
 		tradingPanel.setNotifyComponentsAlways(true);
+	}
+
+	public PlayerActionManager getPlayerActionManager() {
+		return playerActionManager;
+	}
+
+	public PlayerCardManager getPlayerCardManager() {
+		return playerCardManager;
+	}
+
+	public ObjectManager getObjectManager() {
+		return objectManager;
+	}
+	
+	public void putRobberOnPlayer(Player player, Player playerToRecieve) {
+		int playerCards = player.getResources().size();
+		int random = new Random().nextInt(playerCards);
+		playerCardManager.addPlayerCard(playerToRecieve, playerCardManager.getResources().get(player).remove(random));
+		if(playerCards >= 8) {
+			playerCardManager.setNumberOfDiscardedCardsNeeded((int) Math.floor(playerCards / 2));
+		}
 	}
 
 }

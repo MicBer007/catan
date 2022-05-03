@@ -26,6 +26,16 @@ public class Button extends UIComponent {
 		setMouseState(0);
 	}
 	
+	public Button(Hitbox hitbox, String text, Color base, Runnable run) {
+		super(hitbox);
+		this.run = run;
+		this.textComponent = new TextComponent(hitbox, text, Color.BLACK, base);
+		this.base = base;
+		this.hover = new Color(Math.min(base.getRed() + 10, 255), Math.min(base.getGreen() + 10, 255), Math.min(base.getBlue() + 10, 255));
+		this.click = new Color(Math.max(base.getRed() - 10, 0), Math.max(base.getGreen() - 10, 0), Math.max(base.getBlue() - 10, 0));
+		setMouseState(0);
+	}
+	
 	@Override
 	public void render(Graphics g) {
 		if(isVisible()) {

@@ -4,7 +4,7 @@ import java.awt.Polygon;
 import java.util.ArrayList;
 import java.util.List;
 
-import debug.Debug;
+import settings.Settings;
 
 public class GameTile {
 	
@@ -18,8 +18,6 @@ public class GameTile {
 	
 	private int diceNumber;
 	
-	private boolean robber = false;
-	
 	private List<MapIntersection> adjacentIntersections = new ArrayList<MapIntersection>();
 	
 	public GameTile(int tileX, int tileY, GameTileType tileType, int diceNumber) {
@@ -27,21 +25,18 @@ public class GameTile {
 		this.tileY = tileY;
 		this.tileType = tileType;
 		this.diceNumber = diceNumber;
-		if(diceNumber == 7) {
-			robber = true;
-		}
-		this.x = tileX * Debug.GAME_TILE_REAL_SIZE_X;
-		this.y = tileY * Debug.GAME_TILE_REAL_SIZE_Y / 2;
+		this.x = tileX * Settings.GAME_TILE_REAL_SIZE_X + Settings.MAP_OFFSET_X;
+		this.y = tileY * Settings.GAME_TILE_REAL_SIZE_Y / 2 + Settings.MAP_OFFSET_Y;
+		this.xMid = x + Settings.GAME_TILE_SIZE_X / 2;
+		this.yMid = y + Settings.GAME_TILE_SIZE_Y / 2;
 		generateTilePolygon();
 	}
 	
 	private void generateTilePolygon() {
-		int[] xPoints = {0, Debug.GAME_TILE_SIZE_X / 4, Debug.GAME_TILE_SIZE_X / 4 * 3, Debug.GAME_TILE_SIZE_X, Debug.GAME_TILE_SIZE_X / 4 * 3, Debug.GAME_TILE_SIZE_X / 4};
-		int[] yPoints = {Debug.GAME_TILE_SIZE_Y / 2, 0, 0, Debug.GAME_TILE_SIZE_Y / 2, Debug.GAME_TILE_SIZE_Y, Debug.GAME_TILE_SIZE_Y};
+		int[] xPoints = {0, Settings.GAME_TILE_SIZE_X / 4, Settings.GAME_TILE_SIZE_X / 4 * 3, Settings.GAME_TILE_SIZE_X, Settings.GAME_TILE_SIZE_X / 4 * 3, Settings.GAME_TILE_SIZE_X / 4};
+		int[] yPoints = {Settings.GAME_TILE_SIZE_Y / 2, 0, 0, Settings.GAME_TILE_SIZE_Y / 2, Settings.GAME_TILE_SIZE_Y, Settings.GAME_TILE_SIZE_Y};
 		polygon = new Polygon(xPoints, yPoints, 6);
 		polygon.translate(x, y);
-		this.xMid = x + Debug.GAME_TILE_SIZE_X / 2;
-		this.yMid = y + Debug.GAME_TILE_SIZE_Y / 2;
 	}
 
 	public Polygon getPolygon() {
@@ -78,14 +73,6 @@ public class GameTile {
 
 	public int getYMid() {
 		return yMid;
-	}
-
-	public boolean isRobber() {
-		return robber;
-	}
-
-	public void setRobber(boolean robber) {
-		this.robber = robber;
 	}
 
 	public List<MapIntersection> getAdjacentIntersections() {

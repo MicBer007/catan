@@ -3,6 +3,7 @@ package catan.graphics.objects.map;
 import java.awt.Color;
 
 import catan.player.ResourceType;
+import settings.Settings;
 
 public enum PortType {
 	
@@ -12,7 +13,7 @@ public enum PortType {
 	
 	private int[] tradeInfluences = new int[] {3, 2, 2, 2, 2, 2};
 	
-	private Color[] colours = new Color[] {Color.WHITE, new Color(210, 77, 44), new Color(26, 96, 32), new Color(76, 230, 65), new Color(245, 219, 24), new Color(113, 113, 116)};
+	private Color[] colours = new Color[] {Color.WHITE, Settings.BRICK_COLOUR, Settings.WOOD_COLOUR, Settings.PASTURE_COLOUR, Settings.WHEAT_COLOUR, Settings.STONE_COLOUR};
 	
 	private String[] tradeNames = new String[] {"3:1", "2:1", "2:1", "2:1", "2:1", "2:1"};
 	

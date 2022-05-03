@@ -43,6 +43,37 @@ public class Player {
 		}
 		return max;
 	}
+	
+	public boolean hasResources(ResourceType resource, int amount) {
+		return resources.get(resource) >= amount;
+	}
+	
+	public boolean hasResources(Map<ResourceType, Integer> resources) {
+		for(ResourceType resource: resources.keySet()) {
+			if(this.resources.get(resource) < resources.get(resource)) {
+				return false;
+			}
+		}
+		return true;
+	}
+	
+	public boolean removeResources(ResourceType type, int amount) {
+		if(!hasResources(type, amount)) {
+			return false;
+		}
+		resources.replace(type, resources.get(type) - amount);
+		return true;
+	}
+	
+	public boolean removeResources(Map<ResourceType, Integer> resources) {
+		if(!hasResources(resources)) {
+			return false;
+		}
+		for(ResourceType type: resources.keySet()) {
+			this.resources.replace(type, this.resources.get(type) - resources.get(type));
+		}
+		return true;
+	}
 
 	public Map<ResourceType, Integer> getResources() {
 		return resources;

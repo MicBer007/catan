@@ -9,8 +9,8 @@ import catan.graphics.objects.map.MapEdge;
 import catan.graphics.objects.map.MapIntersection;
 import catan.graphics.objects.map.Port;
 import catan.player.Team;
-import debug.Debug;
 import methods.SmartText;
+import settings.Settings;
 
 public class MasterRenderer {
 	
@@ -22,25 +22,16 @@ public class MasterRenderer {
 	}
 	
 	public void renderBackground(Graphics g) {
-		g.setColor(Debug.BACKGROUND_COLOR);
+		g.setColor(Settings.BACKGROUND_COLOR);
 		g.fillRect(0, 0, width, height);
 	}
 	
 	public void renderGameTile(Graphics g, GameTile tile) {
 		g.setColor(tile.getTileType().getTileColour());
 		g.fillPolygon(tile.getPolygon());
-		if(!tile.isRobber()) {
-			if(tile.getTileType() != GameTileType.DESERT) {
-				if(tile.getTileType() == GameTileType.WOOD || tile.getTileType() == GameTileType.STONE) {
-					g.setColor(Color.WHITE);
-				} else {
-					g.setColor(Color.BLACK);
-				}
-				SmartText.renderTextCentered(g, Integer.toString(tile.getDiceNumber()), tile.getXMid(), tile.getYMid() + 4);
-			}
-		} else {
-			g.setColor(Debug.ROBBER_COLOUR);
-			g.fillOval(tile.getXMid() - 16, tile.getYMid() - 16, 32, 32);
+		if(tile.getTileType() != GameTileType.DESERT) {
+			g.setColor(tile.getTileType().getTextColour());
+			SmartText.renderTextCentered(g, Integer.toString(tile.getDiceNumber()), tile.getXMid(), tile.getYMid() + 4);
 		}
 	}
 	
@@ -71,11 +62,11 @@ public class MasterRenderer {
 	}
 	
 	public void renderMapPort(Graphics g, Port port) {
-		g.setColor(Color.WHITE);
+		g.setColor(Settings.PORT_OUTLINE);
 		g.fillOval(port.getX() - 13, port.getY() - 13, 26, 26);
 		g.setColor(port.getType().getColour());
 		g.fillOval(port.getX() - 11, port.getY() - 11, 22, 22);
-		g.setColor(Color.BLACK);
+		g.setColor(Settings.PORT_TEXT_COLOUR);
 		g.drawString(port.getType().getTradeName(), port.getX() - 8, port.getY() + 5);
 	}
 	

@@ -4,9 +4,9 @@ import java.awt.Canvas;
 import java.awt.Graphics;
 import java.awt.image.BufferStrategy;
 
-import debug.Debug;
 import debug.Log;
 import debug.LogLevel;
+import settings.Settings;
 import catan.eventListeners.EventManager;
 import catan.eventListeners.MouseListener;
 import catan.graphics.objects.ObjectManager;
@@ -36,13 +36,13 @@ public class CatanGame extends Canvas implements Runnable {
 		
 		objectManager = new ObjectManager();
 		
-		renderer = new MasterRenderer(Debug.SCREEN_WIDTH, Debug.SCREEN_HEIGHT);
+		renderer = new MasterRenderer(Settings.SCREEN_WIDTH, Settings.SCREEN_HEIGHT);
 		
-		playerManager = new PlayerManager(this, objectManager);
+		playerManager = new PlayerManager(objectManager);
 		
 		eventManager = new EventManager(new MouseListener(this));
 		
-        new Window("catan", Debug.SCREEN_WIDTH, Debug.SCREEN_HEIGHT, this);
+        new Window("catan", Settings.SCREEN_WIDTH, Settings.SCREEN_HEIGHT, this);
 
         this.addMouseListener(eventManager.getMouseListener());
         this.addMouseMotionListener(eventManager.getMouseListener());

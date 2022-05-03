@@ -38,6 +38,11 @@ public class Hitbox {
 		transformY(y);
 	}
 	
+	public void setPosition(float x, float y) {
+		transformX(x - x1);
+		transformY(y - y1);
+	}
+	
 	public void transformX(float x) {
 		x1 += x;
 		x2 += x;

@@ -11,26 +11,18 @@ public class OptionBox extends UIComponent {
 	
 	private boolean showOptions = false;
 	
-	private Color base = Color.BLACK, hover = Color.BLACK, click = Color.BLACK;
-	
 	private Color backgroundColour;
 	
-	public OptionBox(Hitbox hitbox, Color base, Color hover, Color click, Color backgroundColour) {
+	public OptionBox(Hitbox hitbox, Color backgroundColour) {
 		super(hitbox);
-		this.base = base;
-		this.hover = hover;
-		this.click = click;
 		this.backgroundColour = backgroundColour;
 	}
 	
 	public OptionBox(Hitbox hitbox, List<String> options, Color base, Color hover, Color click, Color backgroundColour) {
 		super(hitbox);
-		this.base = base;
-		this.hover = hover;
-		this.click = click;
 		this.backgroundColour = backgroundColour;
 		for(String title: options) {
-			addOption(title);
+			addOption(title, base, hover, click);
 		}
 	}
 	
@@ -97,20 +89,36 @@ public class OptionBox extends UIComponent {
 			setAsChosenOption(title, base, hover, click);
 		}
 	}
+
+	public void addOption(String title, Color base) {
+		Hitbox h = getHitbox();
+		int optionBoxHeight = 30;
+		int y = h.getY1() + (getSubComponents().size() + 1) * optionBoxHeight;
+		Runnable run = new Runnable() {@Override public void run(){setAsChosenOption(title, base);}};
+		getSubComponents().add(new Button(new Hitbox(h.getX1() + 2, y, h.getWidth() - 2, optionBoxHeight), title, base, run));
+		if(getSubComponents().size() == 1) {
+			setAsChosenOption(title, base);
+		}
+	}
 	
 	public void setAsChosenOption(String title, Color base, Color hover, Color click) {
+		if(currentOption != null) {
+			currentOption.setMouseState(0);
+		}
 		Hitbox h = getHitbox();
 		Runnable run = new Runnable() {@Override public void run() {changeShowOptions();}};
 		currentOption = new Button(new Hitbox(h.getX1() + 2, h.getY1() + 2, h.getWidth() - 4, h.getHeight() - 4), title, base, hover, click, run);
 		showOptions = false;
 	}
-
-	public void addOption(String title) {
-		addOption(title, base, hover, click);
-	}
 	
-	public void setAsChosenOption(String title) {
-		setAsChosenOption(title, base, hover, click);
+	public void setAsChosenOption(String title, Color base) {
+		if(currentOption != null) {
+			currentOption.setMouseState(0);
+		}
+		Hitbox h = getHitbox();
+		Runnable run = new Runnable() {@Override public void run() {changeShowOptions();}};
+		currentOption = new Button(new Hitbox(h.getX1() + 2, h.getY1() + 2, h.getWidth() - 4, h.getHeight() - 4), title, base, run);
+		showOptions = false;
 	}
 	
 	public void changeShowOptions() {
