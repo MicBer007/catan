@@ -4,12 +4,19 @@ import java.awt.Color;
 
 public enum Team {
 	
-	RED, BLUE, WHITE, ORANGE, NONE;
+	RED(Color.RED),
+	ORANGE(new Color(245, 130, 0)),
+	WHITE(Color.WHITE),
+	BLUE(Color.BLUE);
 	
-	private Color[] teamColours = new Color[] {Color.RED, Color.BLUE, Color.WHITE, Color.ORANGE, Color.BLACK};
+	private Color colour;
+	
+	private Team(Color colour) {
+		this.colour = colour;
+	}
 	
 	public Color getColour() {
-		return teamColours[ordinal()];
+		return colour;
 	}
 
 }

@@ -3,7 +3,8 @@ package utils;
 import java.util.ArrayList;
 import java.util.List;
 
-import catan.graphics.objects.ui.Hitbox;
+import settings.Settings;
+import ui.Hitbox;
 
 public class HitboxUtils {
 	
@@ -17,6 +18,11 @@ public class HitboxUtils {
 			hitboxes.add(new Hitbox(startX + xBetween * i, startY + yBetween * i, hitboxWidth, hitboxHeight));
 		}
 		return hitboxes;
+	}
+	
+	public static Hitbox centreHitboxAtY(int y, int width, int height) {
+		int middleX = Settings.SCREEN_WIDTH / 2;
+		return new Hitbox(middleX - width / 2, y - height / 2, width, height);
 	}
 
 }

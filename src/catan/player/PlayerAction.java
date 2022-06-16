@@ -1,7 +1,0 @@
-package catan.player;
-
-public enum PlayerAction {
-	
-	NONE, PLACE_ROAD, PLACE_ROAD_START, PLACE_TOWN, PLACE_TOWN_START, PLACE_TOWN_START_WITH_RESOURCES, UPGRADE_CITY;
-
-}

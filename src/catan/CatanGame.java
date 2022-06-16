@@ -1,128 +1,78 @@
 package catan;
 
-import java.awt.Canvas;
 import java.awt.Graphics;
-import java.awt.image.BufferStrategy;
+import java.awt.event.MouseEvent;
 
-import debug.Log;
-import debug.LogLevel;
+import catan.player.types.Human;
+import catan.player.types.Player;
+import client.Client;
+import map.Map;
+import mapGeneration.MapCreator;
+import menu.Menu;
+import rendering.MasterRenderer;
 import settings.Settings;
-import catan.eventListeners.EventManager;
-import catan.eventListeners.MouseListener;
-import catan.graphics.objects.ObjectManager;
-import catan.graphics.rendering.MasterRenderer;
-import catan.player.PlayerManager;
-import catan.window.Window;
 
-public class CatanGame extends Canvas implements Runnable {
+public class CatanGame {
 	
-	private Log log = new Log(this.getClass().getSimpleName(), LogLevel.INFO);
-	    
-	private static final long serialVersionUID = 1550691097823471818L;
-	    
-	private Thread thread;
-    private boolean running = false;
-    
-    private ObjectManager objectManager;
-    
-    private MasterRenderer renderer;
-    
-    private PlayerManager playerManager;
-    
-    private EventManager eventManager;
-    
-    public CatanGame() {
-		log.info("Initializing...");
-		
-		objectManager = new ObjectManager();
-		
-		renderer = new MasterRenderer(Settings.SCREEN_WIDTH, Settings.SCREEN_HEIGHT);
-		
-		playerManager = new PlayerManager(objectManager);
-		
-		eventManager = new EventManager(new MouseListener(this));
-		
-        new Window("catan", Settings.SCREEN_WIDTH, Settings.SCREEN_HEIGHT, this);
-
-        this.addMouseListener(eventManager.getMouseListener());
-        this.addMouseMotionListener(eventManager.getMouseListener());
-    }
-    
-    public synchronized void start() {
-    	log.info("Starting...");
-        thread = new Thread(this);
-        thread.start();
-        running = true;
-    }
-    
-    public synchronized void stop() {
-        try {
-            thread.join();
-            running = false;
-        } catch(Exception e){
-            e.printStackTrace();
-        }
-    }
-    
-    @Override
-    public void run() {
-        long lastTime = System.nanoTime();
-        double amountOfTicks = 10.0;
-        double ns = 1000000000 / amountOfTicks;
-        double delta = 0;
-        long timer = System.currentTimeMillis();
-        int frames = 0;
-        while(running){
-            long now = System.nanoTime();
-            delta += (now - lastTime) / ns;
-            lastTime = now;
-            while(delta >= 1){
-                tick();
-                delta--;
-            }
-            if(running){
-                render();
-            }
-            frames++;
-            if(System.currentTimeMillis() - timer > 1000){
-                timer += 1000;
-                log.info("FPS: " + frames);
-                frames = 0;
-            }
-        }
-    	log.info("Stopping...");
-        stop();
-    }
-    
-    private void tick() {
-        
-    }
-    
-    private void render() {
-        BufferStrategy bs = this.getBufferStrategy();
-        if(bs == null){
-            this.createBufferStrategy(3);
-            return;
-        }
-        Graphics g = bs.getDrawGraphics();
-        
-        objectManager.render(g, renderer);
-        playerManager.render(g);
-        
-        g.dispose();
-        bs.show();
-    }
-
-	public ObjectManager getObjectManager() {
-		return objectManager;
+	public static Map map;
+	
+	public static Player player;
+	
+	private static MasterRenderer renderer = new MasterRenderer();
+	
+	private static Menu menu = new Menu(new Runnable() {@Override public void run() {startServer();}}, new Runnable() {@Override public void run() {joinServer();}});
+	
+	public static Client client;
+	
+	public static GamePhase state = GamePhase.WAITING_FOR_PLAYERS;
+	
+	public static void stop() {
+		if(client != null) {
+			client.disconnect();
+		}
+	}
+	
+	public static void startServer() {
+		if(ServerManager.startServer()) {
+			client = new Client("localhost", Settings.SERVER_PORT, "Garry");
+			client.connect();
+		}
+	}
+	
+	public static void joinServer() {
+		client = new Client("localhost", Settings.SERVER_PORT, "Larry");
+		client.connect();
+	}
+	
+	public static void startGame(String mapGenerationSettings) {
+		map = MapCreator.generateVanillaMap(mapGenerationSettings);
+		state = GamePhase.INIT;
+		player = new Human(client.team, "Garry");
+	}
+	
+	public static void render(Graphics g) {
+		if(state == GamePhase.WAITING_FOR_PLAYERS) {
+			menu.render(g);
+		} else {
+			renderer.renderBackground(g);
+			renderer.renderMap(g, map);
+			renderer.renderPlayerTurnOrderIcons(g, client.turnOrder, client.currentPlayer);
+		}
 	}
 
-	public MasterRenderer getRenderer() {
-		return renderer;
+	public static void mousePressed(MouseEvent e) {
+		menu.mousePressed(e);
+		if(player instanceof Human) {
+			((Human) player).mousePressed(e, map);
+		}
 	}
 
-	public PlayerManager getPlayerManager() {
-		return playerManager;
+	public static void mouseReleased(MouseEvent e) {
+		menu.mouseReleased(e);
 	}
 
+	public static void mouseMoved(MouseEvent e) {
+		menu.mouseMoved(e);
+	}
+	
 }

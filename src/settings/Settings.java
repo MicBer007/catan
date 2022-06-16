@@ -1,8 +1,8 @@
 package settings;
 
 import java.awt.Color;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.Arrays;
+import java.util.List;
 
 import catan.player.ResourceType;
 
@@ -10,10 +10,12 @@ public class Settings {
 	//Debug Information and General code settings
 	
 	//screen settings
-	public static final int SCREEN_WIDTH = 1280;
-	public static final int SCREEN_HEIGHT = 720;
+	public static final int SCREEN_WIDTH = 1280;//1380
+	public static final int SCREEN_HEIGHT = 700;//700
 	
-	public static final Color BACKGROUND_COLOR = Color.BLACK;
+	public static final int TOP_OF_SCREEN_OFFSET = 35;
+	
+	public static final Color BACKGROUND_COLOR = new Color(61, 135, 255);
 	
 	
 	//tile sizes
@@ -45,7 +47,7 @@ public class Settings {
 	
 	
 	//map generation
-	public static final String GENERATOR_SETTINGS = "a1-a2-a3-a4-a5-a6";
+	public static final String GENERATOR_SETTINGS = "b3-a2-a1-b4-a5-a6";
 	
 	public static final int MAP_OFFSET_X = 90;
 	public static final int MAP_OFFSET_Y = 20;
@@ -58,34 +60,17 @@ public class Settings {
 	//UI
 	public static final int UI_PADDING = 20;
 	
+	public static final Color TURN_ORDER_PANEL_COLOUR = new Color(56, 132, 246);
+	
+	
+	//server
+	public static final int SERVER_PORT = 5000;
 	
 	//things the player can buy
-	public static Map<ResourceType, Integer> getRoadCost(){
-		Map<ResourceType, Integer> cost = new HashMap<ResourceType, Integer>();
-		cost.put(ResourceType.BRICK, 1);
-		cost.put(ResourceType.WOOD, 1);
-		return cost;
-	}
-	public static Map<ResourceType, Integer> getVillageCost(){
-		Map<ResourceType, Integer> cost = new HashMap<ResourceType, Integer>();
-		cost.put(ResourceType.BRICK, 1);
-		cost.put(ResourceType.WOOD, 1);
-		cost.put(ResourceType.PASTURE, 1);
-		cost.put(ResourceType.WHEAT, 1);
-		return cost;
-	}
-	public static Map<ResourceType, Integer> getCityCost(){
-		Map<ResourceType, Integer> cost = new HashMap<ResourceType, Integer>();
-		cost.put(ResourceType.WHEAT, 2);
-		cost.put(ResourceType.STONE, 3);
-		return cost;
-	}
-	public static Map<ResourceType, Integer> getDevelopementCardCost(){
-		Map<ResourceType, Integer> cost = new HashMap<ResourceType, Integer>();
-		cost.put(ResourceType.PASTURE, 1);
-		cost.put(ResourceType.WHEAT, 1);
-		cost.put(ResourceType.STONE, 1);
-		return cost;
-	}
+	
+	public static final List<ResourceType> ROAD_COST = Arrays.asList(new ResourceType[] {ResourceType.BRICK, ResourceType.WOOD});
+	public static final List<ResourceType> VILLAGE_COST = Arrays.asList(new ResourceType[] {ResourceType.BRICK, ResourceType.WOOD, ResourceType.PASTURE, ResourceType.WHEAT});
+	public static final List<ResourceType> CITY_COST = Arrays.asList(new ResourceType[] {ResourceType.WHEAT, ResourceType.WHEAT, ResourceType.STONE, ResourceType.STONE, ResourceType.STONE});
+	public static final List<ResourceType> DEVELOPEMENT_CARD_COST = Arrays.asList(new ResourceType[] {ResourceType.PASTURE, ResourceType.WHEAT, ResourceType.STONE});
 	
 }

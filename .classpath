@@ -6,6 +6,9 @@
 		</attributes>
 	</classpathentry>
 	<classpathentry kind="src" path="src"/>
-	<classpathentry kind="lib" path="C:/Users/Alex/Documents/java libs/GraphicsLib.jar"/>
+	<classpathentry kind="src" path="map"/>
+	<classpathentry kind="src" path="rendering"/>
+	<classpathentry kind="src" path="ui"/>
+	<classpathentry kind="src" path="server"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

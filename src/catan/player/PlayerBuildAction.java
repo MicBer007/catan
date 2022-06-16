@@ -1,0 +1,7 @@
+package catan.player;
+
+public enum PlayerBuildAction {
+	
+	BUILD_ROAD, BUILD_ROAD_START, BUILD_VILLAGE, BUILD_VILLAGE_START, BUILD_VILLAGE_START_WITH_RESOURCES, BUILD_CITY;
+
+}
